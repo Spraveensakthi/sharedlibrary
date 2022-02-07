@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: address-dao
+  namespace: cfs-dao-services-ns
+  labels:
+    app: address-dao
+    environment: dev
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1 # how many pods we can add at a time
+      maxUnavailable: 0 # maxUnavailable define how many pods can be unavailable
+  selector:
+    matchLabels:
+      app: address-dao
+  template:
+    metadata:
+      labels:
+        app: address-dao
+    spec:
+      terminationGracePeriodSeconds: 1
+      containers:
+        - name: address-dao
+          image: gcr.io/Project/address-dao-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 30005
+          resources:
+            requests:
+                cpu: "50m"
+                memory: "300Mi"
+            limits:
+                cpu: "75m"
+                memory: "500Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: address-dao-service
+  namespace: cfs-dao-services-ns
+spec:
+  type: ClusterIP
+  selector:
+    app: address-dao
+  ports:
+    - protocol: TCP
+      port: 30005
+      targetPort: 30005
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: address-dao-hpa
+  namespace: cfs-dao-services-ns
+spec:
+    scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: address-dao
+    minReplicas: 1
+    maxReplicas: 1
+    behavior:
+      scaleDown:
+        stabilizationWindowSeconds: 10
+        policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 10
+        selectPolicy: Min
+      scaleUp:
+        stabilizationWindowSeconds: 30
+        policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 20
+        selectPolicy: Max
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
