@@ -1,4 +1,4 @@
-@Library('sahredlibrary@main') _
+@Library('sahredlibrary') _
     parameters {
 		string(name: 'imageName', defaultValue: 'adress-dao-pipeline', description: 'Name of the image to be built and deployed')
 		string(name: 'BRANCH_NAME', defaultValue: 'qa', description: 'value qa will be deploy on qa cluster and value starting with sprint will deploy on dev cluster')
